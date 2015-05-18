@@ -1,0 +1,163 @@
+<script type="text/javascript" src="/common/jquery-1.7.1.min.js"></script>
+<script type="text/javascript" src="/ezwebframe/websock.js"></script>
+<script src="//cdn.jsdelivr.net/emojione/1.3.0/lib/js/emojione.min.js"></script>
+<title>Erlang Inbox</title>
+<link rel="stylesheet" href="./email.css" type="text/css">
+<body>
+  <header class="main-header" role="banner">
+    <h1>erlang email</h1>
+    <ul>
+      <li id="new" onclick="newMessageMode();"><a>new message.</a></li>
+      <li id="inbox" onclick="inboxMode();"><a>inbox.</a></li>
+      <li id="logout" onclick="logout()"><a>logout.</a></li>
+    </ul>
+  <div id="mail">
+      <div id="messages">
+        </div>
+      </div>
+  </div>
+  <div id = "viewmessage" style="display: none;">
+    <div id = "messagehead"></div>
+      <div id = "messagebody"></div>
+    </div>
+  <div id = "newmessage" style="display: none;">
+    <div id="userinput">
+      <span id="tofield">
+        <input id="toNames" placeholder="To"/>
+      </span>
+      <span id="subjectfield">
+        <input id="subject" placeholder="Subject"/>
+      </span>
+      <span id="bodyfield">
+        <textarea id="body" placeholder=""/></textarea>
+      </span>
+      <button id="send" type="button">send</button>
+    </div>
+    </div>
+  </header> 
+  <footer>
+    <p onclick="getEmails();">&copy;2015 Mitch Olson </p>
+  </footer>
+</body>
+
+<script>
+
+$( document ).ready(run);
+
+function run () {
+  set = false;
+
+  $( "#mail" ).hover(
+  function() {
+    if (set == false) {
+      addRowHandlers();
+      set = true; }
+  }, function() {
+    console.log("leaving");
+  }
+);
+
+  $( '#send').click( 
+    function() {
+      console.log("clicked send button!");
+      var toNames = $("#toNames").val();
+      var toNamesList = toNames.split(",");
+      var subject = $("#subject").val();
+      var message = $('#body').val();
+      console.log(toNamesList);
+      console.log(subject);
+      console.log(message);
+      send_json({'toNames':toNamesList, 'subject':subject, 'message':message});
+      })
+
+$( "span" ).hover(
+  function() {
+    $( this ).css({
+      "color": "gray",
+      "font-weight": "bolder" });
+  }, function() {
+    $( this ).css({
+      "color": "white",
+      "font-weight": "lighter"});
+  }
+);
+
+$ ("#new").onclick = function() {
+  newMessageMode();
+}
+
+$("#inbox").onclick = function () {
+  inboxMode();
+}
+
+}
+
+function newMessageMode() {
+  console.log("NewMsesageMode")
+  $("#mail").fadeOut();
+  $("#mail").hide();
+  $("#viewmessage").fadeOut();
+  $("#viewmessage").hide();
+  $("#newmessage").fadeIn();
+}
+
+function inboxMode() {
+  $("#newmessage").fadeOut();
+  $("#viewmessage").fadeOut();
+  $("#newmessage").hide();
+  $("#viewmessage").hide();
+  $("#mail").fadeIn();
+  $("#messages").fadeIn();
+
+}
+
+function logout() {
+	send_json({'logout':""});
+	window.location.replace("http://localhost:1456/email/create_account.html");	
+}
+
+
+function hide_div(o){
+    $("#" + o.id).hide();
+}
+  
+function show_div(o){
+    $("#" + o.id).show();
+}
+
+set = false;
+
+$("#mail").on("mouseenter", function() {
+  if (set == false) {
+    //addRowHandlers();
+    $('#tableinbox tr').hover(function() {
+    $( this ).css({
+      "color": "gray",
+      "font-weight": "bolder",
+      "cursor" : "pointer" });
+    }, function() {
+    $( this ).css({
+      "color": "white",
+      "font-weight": "lighter"})});
+
+    $('#tableinbox tr').click(function() {
+      console.log($(this));
+      var cell = $(this).context.cells[4];
+      var id = cell.innerHTML;
+      send_json({'getMessage':id});
+      $("#messages").fadeOut();
+      $("#messages").css({
+          "display": "none",
+      })
+      $("#viewmessage").fadeIn();
+    });
+    set = true;
+  } else {
+    return set;
+  }
+});
+
+connect_to_erlang("localhost", 1456, "start");
+send_json({'get':""});
+
+</script>

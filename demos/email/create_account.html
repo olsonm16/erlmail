@@ -1,0 +1,112 @@
+<script type="text/javascript" src="/common/jquery-1.7.1.min.js"></script>
+<script type="text/javascript" src="/ezwebframe/websock.js"></script>
+<script src="//cdn.jsdelivr.net/emojione/1.3.0/lib/js/emojione.min.js"></script>
+<link rel="stylesheet" href="./email.css" type="text/css">
+<title>Erlang Email</title>
+<body>
+  <header class="main-header" role="banner">
+    <h1>erlang email</h1>
+    <span id="welcome"<h3>welcome.</h3></span>
+  <div id="createaccount" style="text-align:center">
+    <div id="user"><input id="username" align="center" placeholder="username"/></div>
+    <div id="pass"><input id="password" type="password" align="center" placeholder="password"/></div>
+    <button id="create" type="button">login</button>
+    <button id="createnew" type="button">new account</button>
+    <br/>
+  </div>
+  <div id="success" onclick = "toInbox();" style="display: none;">
+      <p>Login successful, click here for your Inbox.</p>
+  </div>
+  <div id="failed" style="display: none;">
+      <p>Login failed, try again or create a new account.</p>
+  </div>
+  <div id="newsuccess" onclick = "toInbox();" style="display: none;">
+      <p>Account creation successful, click here for your Inbox.</p>
+  </div>
+  <div id="newfailure" style="display: none;">
+      <p>Account creation failed. The user name may already be taken.</p>
+  </div>
+  <div id= "sessionActive" style="display: none;">
+  </div>
+  <div id = "logoutOption" onclick = "logout()" style="display: none;">
+  		<p>Click here to logout of the active session></p>
+  	</div>
+  </header> 
+  <footer>
+    <p>&copy;2015 Morgan, Olson, Utomo </p>
+  </footer>
+</body>
+
+<style>
+  ::-webkit-input-placeholder {
+   text-align: center;
+}
+
+:-moz-placeholder { /* Firefox 18- */
+   text-align: center;  
+}
+
+::-moz-placeholder {  /* Firefox 19+ */
+   text-align: center;  
+}
+
+:-ms-input-placeholder {  
+   text-align: center; 
+}
+</style>
+
+<script>
+$(document).ready(run);
+
+function run(){
+  $("#create").click(function(){
+      console.log("clicked button!");
+      var username = $("#username").val();
+      var password = $("#password").val();
+      var data = [username, password];
+      console.log(data);
+      send_json({'login':data});
+      })
+  $("#createnew").click(function(){
+      console.log("clicked new button!");
+      var username = $("#username").val();
+      var password = $("#password").val();
+      var data = [username, password];
+      console.log(data);
+      send_json({'create':data});
+      })
+}
+
+function logout() {
+	send_json({'logout':""});
+	$("#logoutOption").hide();
+}
+
+function toInbox() {
+	window.location.replace("http://localhost:1456/email/inbox.html");
+}
+
+function hide_div(o){
+    $("#" + o.id).hide();
+}
+  
+function show_div(o){
+    $("#" + o.id).show();
+}
+
+  $("span").on( "mouseenter", function() {
+    $( this ).css({
+      "color": "gray",
+      "font-weight": "bolder"
+    });
+  });
+  $("span").on( "mouseleave", function() {
+    $( this ).css({
+      "color": "white",
+      "font-weight": "lighter"
+    });
+  });
+
+connect_to_erlang("localhost", 1456, "start");
+
+</script>
