@@ -1,6 +1,6 @@
 body {margin-left: auto;
       margin-right: auto;
-      background-color: black;
+          background-color: black
      }
 
 
@@ -17,10 +17,16 @@ ul {
     background-color: rgba(0, 20, 41, 0.6);
     color: white;
     font-weight: lighter;
+
+}
+
+#messagebody {
+  background-color: rgba(0, 20, 41, 0.6);
 }
 
 #logout, #inbox, #new{
   cursor: pointer;
+  text-align: center;
 }
 
 li {
@@ -51,8 +57,7 @@ a:visited {
 
   .main-header {
   text-align: center;
-  height:575px;
-  background-image: url("erlang.jpg");
+  height:800px;
 }
   .thumb {
     height: 75px;
@@ -63,6 +68,14 @@ a:visited {
   h1, h2 {
     padding-top: 30px;
 
+  }
+
+  #headcontent {
+      background-image: url("erlang2.jpg");
+	  background-position: center;
+	  background-size: cover;
+      background-repeat: no-repeat;
+      
   }
 
   footer {
@@ -79,7 +92,7 @@ a:visited {
     padding-bottom: 10px;
   }
 
-  #banner, h1, h2, h3, h4, span, #tableinbox, #failed, #success, #toInbox{
+  #banner, h1, h2, h3, h4, span, #tableinbox, #failed, #success, #newfailure, #toInbox, #faileddeliveries, #redirectToInbox, #messageSent, #deleted, #settingsPane{
     font-family: monospace;
     text-align: center;  
     background-color: rgba(0, 20, 41, 0.6);
@@ -87,10 +100,34 @@ a:visited {
     font-weight: lighter;
   }
 
+  #filePicker {
+    margin-left: 110px;
+    padding: 10px;
+  }
+
+  #settingsPane {
+    margin-top: 15px;
+    height: 150px;
+    width: 300px;
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 10px;
+  }
+
+  #messageSent, #messageDeleted {
+    font-family: monospace;
+    text-align: center;
+    font-size: 15px;  
+    background-color: rgba(0, 20, 41, 0.6);
+    color: white;
+    font-weight: lighter;
+    margin-top: 20px;
+  }
+
 #message {
   font-family: monospace;
   text-align: left;
-  background-color: rgba(0, 20, 41, 0.6);
   color: white;
   font-weight: 100;
   height: 300px;
@@ -101,6 +138,14 @@ a:visited {
 
 #messagetxt {
   padding: 15px;
+  white-space: pre-wrap;
+}
+
+#messageBody {
+  background-color: rgba(0, 20, 41, 0.6);
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 10px;
 }
 
   #createaccount {
@@ -108,7 +153,12 @@ a:visited {
     font-size: small;
     background-color: rgba(0, 20, 41, 0.6);
     padding-bottom: 10px;
+    margin-top: 19px;
   }
+
+  div#buttons {
+  padding-bottom: 7;
+}
 
   #user {
     padding-top: 30px;
@@ -118,6 +168,10 @@ a:visited {
     padding-top: 5px;
     padding-bottom:5px;
   }
+
+  div#messagehead {
+  margin-top: 15px;
+}
 
   #create, #createnew {
     text-align: center;
@@ -146,6 +200,11 @@ a:visited {
       border-style: solid;
 }
 
+#success, #newfailure, #failed {
+  padding: 5px;
+  margin-top: 20px;
+}
+
 #toNames, #subject, #body {
       text-align: left;
       margin-left: auto;
@@ -170,13 +229,24 @@ a:visited {
   margin-top: 10px;
 }
 
+#faileddeliveries {
+  padding: 10px;
+  margin-top: 10px
+}
+
+#redirectToInbox {
+  padding: 10px;
+  cursor: pointer;
+
+}
+
 #body {
   text-align: left;
   padding-right: 10px;
   padding-left: 10px;
   display: block;
   width: 700px;
-  height: 325px;
+  height: 290px;
 }
 
 #toNames {
@@ -249,7 +319,7 @@ a:visited {
     padding-bottom: 10px;
   }
 
-  #send
+  #send, #backgroundUpload, #clearinbox, #destroyuser, #deleteMessage, #reply
   {
       text-align: center;
   background: black;
@@ -259,6 +329,14 @@ a:visited {
   border-width: thin;
   border-color: white;
   border-style: solid;
+  }
+
+  #deleteMessage, #reply {
+    margin-top: 7.5px;
+  }
+
+  #deleteMessage {
+    margin-left: 5px;
   }
 
   #pass {

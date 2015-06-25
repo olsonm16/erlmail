@@ -2,16 +2,19 @@
 %% Thursday May 14 2015
 
 -module(chat_client).
--export([start/0, login/2, create_user/2, send_message/4, check_mail/0, loop/1, logout/0, isLoggedOn/0, myName/0, getOneMessage/1]).
+-export([start/0, login/2, create_user/2, destroy_user/0, clear_inbox/0, send_message/4, check_mail/0, deleteOneMessage/1, loop/1, logout/0, isLoggedOn/0, myName/0, getOneMessage/1, get_photo/0, update_photo/1]).
 
 start() -> register(chat_client, spawn(chat_client, loop, [{null, null}])).
 
+%An interface which takes a name and password and makes a remote procedure call with the argument {login, {Name, Pwd}}.
 login(Name, Pwd) ->
     rpc({login, {Name, Pwd}}).
 
+%An interface which takes a name and password and makes a remote procedure call with the argument {create_user, {Name, Pwd}}.
 create_user(Name, Pwd) ->
     rpc({create_user, {Name, Pwd}}).
 
+%An interface which takes message information and likewise makes a remote procedure call.
 send_message(To, Subject, Body, Date) ->
     rpc({send_message, {To, Subject, Body, Date}}).
 
@@ -29,6 +32,21 @@ myName() ->
 
 getOneMessage(UniqueMessageID) ->
 	rpc({get_message, UniqueMessageID}).
+
+deleteOneMessage(UniqueMessageID) ->
+	rpc({delete_message, UniqueMessageID}).
+
+update_photo(PhotoBin) ->
+	rpc({update_photo, PhotoBin}).
+
+get_photo() ->
+	rpc({get_photo}).
+
+destroy_user() ->
+	rpc({destroy_user}).
+
+clear_inbox() ->
+	rpc({clear_inbox}).
 
 rpc(Request) ->
 	chat_client ! {self(), Request},
@@ -62,7 +80,7 @@ loop({Username, Password}) ->
 		case {Username, Password} == {null, null} of
 			false -> case makeRequest("UserEnvironment", {send_message, {Username, To, Subject, Body, Date}}) of
 						{success} -> {From ! {message_delivered}};
-						{error, Reason} -> {From ! {error, Reason}}
+						{{error, FailedDeliveries}} -> {From ! {error, FailedDeliveries}}
 				end;
 			true -> {From ! {error, "no user logged on"}}
 			end,
@@ -84,6 +102,36 @@ loop({Username, Password}) ->
 		loop({Username, Password});
 	{From, {myname}} ->
 		{From ! Username},
+		loop({Username, Password});
+	{From, {delete_message, UniqueMessageID}} ->
+		case makeRequest("UserEnvironment", {delete_message, {Username, UniqueMessageID}}) of
+			{ok} -> {From ! {message_deleted}};
+			{{error, Reason}} -> {From ! {error, Reason}}
+		end,
+		loop({Username, Password});
+	{From, {update_photo, PhotoBin}} ->
+		case makeRequest("UserEnvironment", {update_photo, {Username, PhotoBin}}) of
+			{error, Reason} -> {From ! {error, Reason}};
+			{ok} -> {From ! {ok}}
+		end,
+		loop({Username, Password});
+	{From, {get_photo}} ->
+		case makeRequest("UserEnvironment", {get_photo, Username}) of
+			{{ok, Bin}} -> {From ! {ok, Bin}};
+			{error, Reason} -> {From ! {error, Reason}}
+		end,
+		loop({Username, Password});
+	{From, {destroy_user}} ->
+		case makeRequest("UserEnvironment", {destroy_user, Username}) of
+			{{ok}} -> {From ! {user_destroyed}};
+			{error, Reason} -> {From ! {error, Reason}}
+		end,
+		loop({null, null});
+	{From, {clear_inbox}} ->
+		case makeRequest("UserEnvironment", {clear_inbox, Username}) of
+			{{ok}} -> {From ! {inbox_cleared}};
+			{error, Reason} -> {From ! {error, Reason}}
+		end,
 		loop({Username, Password});
 	{From, {get_message, UniqueMessageID}} ->
 		case makeRequest("UserEnvironment", {get_message, {Username, UniqueMessageID}}) of
@@ -115,7 +163,7 @@ makeRequest(Environment, Request) ->
 		    {error, connect}
 	    end;
 	%Returned by resolver if lookup fails.
-	{ok, false} -> {error, "Lookup failed -- Bank server not found in name server"};
+	{ok, false} -> {error, "Lookup failed -- Chat server not found in name server"};
 	{error, _} ->
 	    {error, resolve}
     end.

@@ -2,7 +2,8 @@
 -export([store/2, destroy/1, lookup/1]).
 
 %%-define(HOST, "localhost").
--define(HOST, "137.113.118.30").
+%%-define(HOST, "137.113.118.30").
+-define(HOST, "137.113.118.10").
 %-define(PORT, 50000).
 -define(PORT, 9100).
 

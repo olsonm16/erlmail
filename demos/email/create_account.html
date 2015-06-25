@@ -2,16 +2,21 @@
 <script type="text/javascript" src="/ezwebframe/websock.js"></script>
 <script src="//cdn.jsdelivr.net/emojione/1.3.0/lib/js/emojione.min.js"></script>
 <link rel="stylesheet" href="./email.css" type="text/css">
-<title>Erlang Email</title>
+<title>erlmail</title>
 <body>
-  <header class="main-header" role="banner">
-    <h1>erlang email</h1>
+  <header id="headcontent" class="main-header" role="banner">
+    <h1>erlmail</h1>
     <span id="welcome"<h3>welcome.</h3></span>
+    <div id="deleted" style="display: none;">
+      <p>Account successfully deactivated.</p>
+  </div>
   <div id="createaccount" style="text-align:center">
     <div id="user"><input id="username" align="center" placeholder="username"/></div>
     <div id="pass"><input id="password" type="password" align="center" placeholder="password"/></div>
+    <div id="buttons">
     <button id="create" type="button">login</button>
     <button id="createnew" type="button">new account</button>
+    </div>
     <br/>
   </div>
   <div id="success" onclick = "toInbox();" style="display: none;">
@@ -75,6 +80,17 @@ function run(){
       console.log(data);
       send_json({'create':data});
       })
+	document.getElementById("pass").addEventListener("keydown", function(e) {
+    //if (!e) { var e = window.event; }
+    //e.preventDefault(); // sometimes useful
+
+    // Enter is pressed
+    	if (e.keyCode == 13) { 
+    	var username = $("#username").val();
+      	var password = $("#password").val();
+      	var data = [username, password];
+      	send_json({'login':data}); }
+	}, false);
 }
 
 function logout() {
@@ -82,8 +98,23 @@ function logout() {
 	$("#logoutOption").hide();
 }
 
+
+
 function toInbox() {
-	window.location.replace("http://localhost:1456/email/inbox.html");
+  window.location.replace("http://localhost:1456/email/inbox.html"); 
+}
+
+function clientIsLoggedOn() {
+  toInbox();
+}
+
+function noClientLoggedOn() {}
+
+function wasJustDestroyed() {
+
+  $("#deleted").fadeIn();
+  $("#deleted").delay(2500).fadeOut();
+
 }
 
 function hide_div(o){

@@ -1,26 +1,46 @@
 <script type="text/javascript" src="/common/jquery-1.7.1.min.js"></script>
 <script type="text/javascript" src="/ezwebframe/websock.js"></script>
 <script src="//cdn.jsdelivr.net/emojione/1.3.0/lib/js/emojione.min.js"></script>
-<title>Erlang Inbox</title>
+<title>erlmail inbox.</title>
 <link rel="stylesheet" href="./email.css" type="text/css">
 <body>
-  <header class="main-header" role="banner">
-    <h1>erlang email</h1>
+  <header id="headcontent" class="main-header" role="banner">
+    <h1 id-"header">erlmail inbox.</h1>
     <ul>
-      <li id="new" onclick="newMessageMode();"><a>new message.</a></li>
+      <li id="new" onclick="newMessageMode();"><a>new.</a></li>
       <li id="inbox" onclick="inboxMode();"><a>inbox.</a></li>
+      <li id="settings" style="cursor:pointer;" onclick = "settings();"><a>settings.</a></li>
       <li id="logout" onclick="logout()"><a>logout.</a></li>
     </ul>
-  <div id="mail">
+  <div id = "settingsPane" style="display: none;"> 
+    <h10>Settings</h10>
+    <div id="whoami" style="margin-top: 5px; "></div>
+    <br>
+    <button id="backgroundUpload" type="button" style="cursor: pointer; padding: 5px;">Upload Background</button>
+    <input type="file" style="display: none;" id="filePicker"/>
+    <br><button id="clearinbox" type="button" onclick="clearInbox();" style="cursor: pointer; padding: 5px; margin-top:10px">Clear Inbox</button>
+    <br><button id="destroyuser" type="button" onclick="destroyUser();"style="cursor: pointer; padding: 5px; margin-top:10px">Deactivate Account</button>
+   </div>
+  <div id = "messageSent" style="display: none;">Message sent.
+      </div>
+  <div id = "messageDeleted" style="display: none;">Message deleted.
+      </div>
+  <div id = "faileddeliveries" style="display: none;">
+    </div>
+  <div id = "redirectToInbox"  style="display: none;" onclick="inboxMode();">Feel free to make changes to the email to resend, or click to return to the Inbox.
+  </div>
+  <div id="mail"  style="height:400px; overflow: auto">
       <div id="messages">
         </div>
       </div>
   </div>
   <div id = "viewmessage" style="display: none;">
     <div id = "messagehead"></div>
-      <div id = "messagebody"></div>
+      <div id = "messagebody" style="height:400px; width:800px; overflow: auto;"></div>
+      <button id="reply" onclick="replyToMessage();"type="button">reply.</button>
+      <button id="deleteMessage" onclick="deleteCurrentMessage();" type="button"> delete. </button>
     </div>
-  <div id = "newmessage" style="display: none;">
+  <div id = "newmessage" style="display: none;" >
     <div id="userinput">
       <span id="tofield">
         <input id="toNames" placeholder="To"/>
@@ -33,10 +53,10 @@
       </span>
       <button id="send" type="button">send</button>
     </div>
-    </div>
+    </div>  
   </header> 
   <footer>
-    <p onclick="getEmails();">&copy;2015 Mitch Olson </p>
+    <p>&copy;2015 Morgan, Olson, Utomo </p>
   </footer>
 </body>
 
@@ -44,7 +64,38 @@
 
 $( document ).ready(run);
 
+var handleFileSelect = function(evt) {
+    var files = evt.target.files;
+    var file = files[0];
+
+    if (files && file) {
+        var reader = new FileReader();
+
+        reader.onload = function(readerEvt) {
+            var binaryString = readerEvt.target.result;
+            send_json({'backgroundImage':btoa(binaryString)});
+            $("#headcontent").css('background-image', 'url(data:image/jpg;base64,' + btoa(binaryString) + ')');
+            $("#settingsPane").slideUp(200);
+        };
+
+        reader.readAsBinaryString(file);
+    }
+};
+
+
+
 function run () {
+
+ document.getElementById('filePicker').addEventListener('change', handleFileSelect, false);
+
+  $("#header").click(function() {
+    window.location.replace("http://localhost:1456/email/create_account.html"); 
+  });
+
+  $("#backgroundUpload").click(function() {
+    $("#filePicker").trigger("click");
+  });
+
   set = false;
 
   $( "#mail" ).hover(
@@ -68,7 +119,10 @@ function run () {
       console.log(subject);
       console.log(message);
       send_json({'toNames':toNamesList, 'subject':subject, 'message':message});
+
       })
+
+
 
 $( "span" ).hover(
   function() {
@@ -92,8 +146,27 @@ $("#inbox").onclick = function () {
 
 }
 
+function clearInbox() {
+  console.log("clicked clear inbox");
+  send_json({'clearinbox':""});
+  $("#settingsPane").slideUp(200);
+  window.location.replace("http://localhost:1456/email/inbox.html");
+}
+
+function destroyUser() {
+  window.location.replace("http://localhost:1456/email/create_account.html"); 
+  send_json({'destroyuser':""});
+}
+
 function newMessageMode() {
-  console.log("NewMsesageMode")
+  $("#settingsPane").slideUp(200);
+  $("#redirectToInbox").fadeOut();
+  $("#messageSent").fadeOut();
+  $("#faileddeliveries").fadeOut();
+  $("#faileddeliveries").empty();
+  $('#toNames').val('');
+  $('#subject').val('');
+  $('#body').val('');
   $("#mail").fadeOut();
   $("#mail").hide();
   $("#viewmessage").fadeOut();
@@ -102,8 +175,17 @@ function newMessageMode() {
 }
 
 function inboxMode() {
+  set = false;
+  send_json({'get':""});
+  $("#settingsPane").slideUp(200);
   $("#newmessage").fadeOut();
   $("#viewmessage").fadeOut();
+  $("#redirectToInbox").fadeOut();
+  $("#messageSent").fadeOut();
+  $("#faileddeliveries").fadeOut();
+  $('#toNames').val('');
+  $('#subject').val('');
+  $('#body').val('');
   $("#newmessage").hide();
   $("#viewmessage").hide();
   $("#mail").fadeIn();
@@ -125,6 +207,80 @@ function show_div(o){
     $("#" + o.id).show();
 }
 
+function messageSent() {
+  $("#messageSent").fadeIn();
+  $("#messageSent").delay(2500).fadeOut();
+  inboxMode();
+}
+
+function messageNotSent() {
+  $("#faileddeliveries").fadeIn();
+  $("#redirectToInbox").delay(2500).fadeIn();
+}
+
+CurrentUniqueMessageID = null;
+
+function setID (UniqueMessageID) {
+  CurrentUniqueMessageID = UniqueMessageID.txt;
+  console.log(UniqueMessageID);
+}
+
+function deleteCurrentMessage() {
+  send_json({'deleteID':CurrentUniqueMessageID});
+}
+
+function replyToMessage(ToList) {
+  console.log($("#currentmessageview")[0]);
+  From = $("#currentmessageview")[0].cells[0].innerHTML;
+  To = $("#currentmessageview")[0].cells[1].innerHTML;
+  Subject = $("#currentmessageview")[0].cells[2].innerHTML;
+  MsgDate = $("#currentmessageview")[0].cells[3].innerHTML;
+  ID = $("#currentmessageview")[0].cells[4].innerHTML;
+  Msg = $("#message")[0].innerText;
+
+  $("#redirectToInbox").fadeOut();
+  $("#messageSent").fadeOut();
+  $("#faileddeliveries").fadeOut();
+  $("#faileddeliveries").empty();
+  $('#toNames').val(From);
+  $('#subject').val("Re: " + Subject);
+  $('#body').val("\r\n\n\n On " + MsgDate + "\n " + From + " sent to: " + To + " \n " + Msg);
+  $("#mail").fadeOut();
+  $("#mail").hide();
+  $("#viewmessage").fadeOut();
+  $("#viewmessage").hide();
+  $("#newmessage").fadeIn();
+}
+
+function messageDeleted() {
+  $("#messageDeleted").fadeIn();
+  $("#messageDeleted").delay(2500).fadeOut();
+  inboxMode();
+  console.log("Command received, messaged deleted!");
+}
+
+function updateBackground(Bin) {
+  if (Bin.txt.length > 1) {
+    $("#headcontent").css('background-image', 'url(data:image/jpg;base64,' + Bin.txt + ')');
+    $("#settingsPane").slideUp(200);
+  };
+}
+
+function settings() {
+  if ($('#settingsPane').css('display') == 'none')  {
+      $("#settingsPane").slideDown(200);
+    } else {
+      $("#settingsPane").slideUp(200);
+    };
+}
+
+function clientIsLoggedOn() {
+}
+
+function noClientLoggedOn() {
+  window.location.replace("http://localhost:1456/email/create_account.html"); 
+}
+
 set = false;
 
 $("#mail").on("mouseenter", function() {
@@ -142,14 +298,16 @@ $("#mail").on("mouseenter", function() {
 
     $('#tableinbox tr').click(function() {
       console.log($(this));
-      var cell = $(this).context.cells[4];
-      var id = cell.innerHTML;
-      send_json({'getMessage':id});
-      $("#messages").fadeOut();
-      $("#messages").css({
-          "display": "none",
-      })
-      $("#viewmessage").fadeIn();
+      if ($(this).context.cells.length == 5) {
+        var cell = $(this).context.cells[4];
+        var id = cell.innerHTML;
+        send_json({'getMessage':id});
+        $("#messages").fadeOut();
+        $("#messages").css({
+            "display": "none",
+        })
+        $("#viewmessage").fadeIn();
+    } 
     });
     set = true;
   } else {
@@ -159,5 +317,6 @@ $("#mail").on("mouseenter", function() {
 
 connect_to_erlang("localhost", 1456, "start");
 send_json({'get':""});
+
 
 </script>

@@ -14,7 +14,6 @@ start() ->
 
 dispatch(F) ->
     F1 = dispatch1(F),
-    io:format("ezwebframe_demos::dispatch ~s => ~s~n",[F,F1]),
     F1.
 
 dispatch1("/ezwebframe/" ++ F) ->

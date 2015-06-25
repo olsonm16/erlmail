@@ -1,0 +1,9 @@
+{application,ezwebframe,
+             [{description,[]},
+              {vsn,"1"},
+              {registered,[]},
+              {applications,[kernel,stdlib,cowboy]},
+              {mod,{erlblog_app,[]}},
+              {env,[{http_port,1456}]},
+              {modules,[ezwebframe,ezwebframe_app,ezwebframe_mochijson2,
+                        ezwebframe_sup]}]}.

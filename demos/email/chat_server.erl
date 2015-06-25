@@ -36,7 +36,7 @@ connection_loop(Socket) ->
 			%Each request has appropriate error handling and saving if a write has been made.
 			{login, {Name, Pwd}} -> 
 				case user_manager:login(Name, Pwd) of
-						{_FriendsList, _Status, _MailboxID} -> gen_tcp:send(Socket,
+							{ok, _MailboxID} -> gen_tcp:send(Socket,
 																	term_to_binary(login_success)),
 																	connection_loop(Socket);
 							{error, Reason} -> 	gen_tcp:send(Socket,
@@ -59,7 +59,9 @@ connection_loop(Socket) ->
 													connection_loop(Socket);
 							{error, FailedDeliveries} -> 	gen_tcp:send(Socket,
 													term_to_binary({error, FailedDeliveries})),
-													connection_loop(Socket)
+													connection_loop(Socket);
+							Other -> io:format("Received back from send message ~p~n", [Other]),
+								connection_loop(Socket)
 						end;
 			{check_mail, {Username, Password}} ->
 				case user_manager:check_mail(Username, Password) of
@@ -68,6 +70,63 @@ connection_loop(Socket) ->
 													connection_loop(Socket);
 							{error, Reason} -> 	gen_tcp:send(Socket,
 													term_to_binary({error, Reason})),
+													connection_loop(Socket)
+						end;
+			{delete_message, {Username, UniqueMessageID}} ->
+				case user_manager:delete_individual_message(Username, UniqueMessageID) of
+					ok -> gen_tcp:send(Socket,
+										term_to_binary(ok)),
+											connection_loop(Socket);
+					{error, Reason} -> gen_tcp:send(Socket,
+										term_to_binary({error, Reason})),
+											connection_loop(Socket)
+				end;
+			{update_photo, {Username, PhotoBin}} ->
+				case user_manager:update_photo(Username, PhotoBin) of
+							ok -> gen_tcp:send(Socket,
+													term_to_binary(ok)),
+													connection_loop(Socket);
+							{error, Reason} -> 	gen_tcp:send(Socket,
+													term_to_binary({error, Reason})),
+													connection_loop(Socket)
+						end;
+			{get_photo, Username} ->
+				case user_manager:get_photo(Username) of
+							{ok, X} -> gen_tcp:send(Socket,
+													term_to_binary({ok, X})),
+													connection_loop(Socket);
+							{error, Reason} -> 	gen_tcp:send(Socket,
+													term_to_binary({error, Reason})),
+													connection_loop(Socket);
+							{{ok, X}} -> io:format("Third case"),
+										gen_tcp:send(Socket,
+													term_to_binary({ok, X})),
+													connection_loop(Socket)
+						end;
+			{destroy_user, Username} ->
+				case user_manager:destroy_user(Username) of
+							{success}-> gen_tcp:send(Socket,
+													term_to_binary({ok})),
+													connection_loop(Socket);
+							{error, Reason} -> 	gen_tcp:send(Socket,
+													term_to_binary({error, Reason})),
+													connection_loop(Socket);
+							{{success}} -> io:format("Third case"),
+										gen_tcp:send(Socket,
+													term_to_binary({ok})),
+													connection_loop(Socket)
+						end;
+			{clear_inbox, Username} ->
+				case user_manager:clear_inbox(Username) of
+							{success}-> gen_tcp:send(Socket,
+													term_to_binary({ok})),
+													connection_loop(Socket);
+							{error, Reason} -> 	gen_tcp:send(Socket,
+													term_to_binary({error, Reason})),
+													connection_loop(Socket);
+							{{success}} -> io:format("Third case"),
+										gen_tcp:send(Socket,
+													term_to_binary({ok})),
 													connection_loop(Socket)
 						end;
 			{get_message, {Username, UniqueMessageID}} ->

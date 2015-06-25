@@ -2,7 +2,7 @@
 %% Thursday May 14 2015
 
 -module(user_manager).
--export([init/0, firstinit/0, create_user/2, add_friend/2, login/2, incoming_message/3, check_mail/2, get_individual_message/2, update_status/2, get_status/1, get_friends/1]).
+-export([init/0, firstinit/0, create_user/2, login/2, destroy_user/1, clear_inbox/1, incoming_message/3, check_mail/2, getMailboxID/1, get_individual_message/2, delete_individual_message/2, update_photo/2, get_photo/1]).
 
 firstinit() ->
 	UsersDat = ets:new(users, [set, public]),
@@ -21,16 +21,31 @@ create_user(Name, Password) ->
 		true -> {error, "Username already in use"};
 		false -> 	UserMailboxID = make_unique_mailbox(MailboxDat, ets:new(mailbox, [set, public])),
 					ets:insert(MailboxDat, {UserMailboxID, {[], 0, 0}}),
-					ets:insert(UsersDat, {Name, {Password, [], offline, UserMailboxID}}),
+					ets:insert(UsersDat, {Name, {Password, <<"">>, UserMailboxID}}),
 					ets_save(UsersDat, "UsersDat"),
 					ets_save(MailboxDat, "MailboxDat"),
 					{success}
 	end.
 
-get_individual_message(Name, UniqueMessageID) ->
-	io:format("in the user manager layer"),
+destroy_user(Name) ->
 	{UsersDat, MailboxDat} = init(),
-	[{Name, {_CorrectPass, _FriendsList, _Status, UserMailboxID}}] = ets:lookup(UsersDat, Name),
+	[{Name, {_CorrectPass, _Photo, UserMailboxID}}] = ets:lookup(UsersDat, Name),
+	ets:delete(UsersDat, Name),
+	ets:delete(MailboxDat, UserMailboxID),
+	ets_save(UsersDat, "UsersDat"),
+	ets_save(MailboxDat, "MailboxDat"),
+	{success}.
+
+clear_inbox(Name) ->
+	{UsersDat, MailboxDat} = init(),
+	[{Name, {_CorrectPass, _Photo, UserMailboxID}}] = ets:lookup(UsersDat, Name),
+	ets:insert(MailboxDat, {UserMailboxID, {[], 0, 0}}),
+	ets_save(MailboxDat, "MailboxDat"),
+	{success}.
+
+get_individual_message(Name, UniqueMessageID) ->
+	{UsersDat, MailboxDat} = init(),
+	[{Name, {_CorrectPass, _Photo, UserMailboxID}}] = ets:lookup(UsersDat, Name),
 	[{_ID, {Messages, _NewCount, _TotalCount}}] = ets:lookup(MailboxDat, UserMailboxID),
 	get_one_message(Messages, UniqueMessageID).
 
@@ -53,24 +68,19 @@ add_mailbox_message(MailboxDat, UserMailboxID, Message) ->
 login(Name, Password) ->
 	{UsersDat, _MailboxDat} = init(),
 	case ets_contains(UsersDat, Name) of
-		true -> [{Name, {CorrectPass, FriendsList, Status, UserMailboxID}}] = ets:lookup(UsersDat, Name),
+		true -> [{Name, {CorrectPass, _Photo, UserMailboxID}}] = ets:lookup(UsersDat, Name),
 				 case Password == CorrectPass of
-					true -> {FriendsList, Status, UserMailboxID};
+					true -> {ok, UserMailboxID};
 					false -> {error, "Login failed, incorrect password"}
 		end;
 		false -> {error, "Login failed, user does not exist"}
 	end.
 
-add_friend(Name, FriendName) ->
-	{UsersDat, _MailboxDat} = init(),
-	[{Name, {CorrectPass, FriendsList, Status, UserMailboxID}}] = ets:lookup(UsersDat, Name),
-	ets:insert(UsersDat, {Name, {CorrectPass, [FriendName | FriendsList], Status, UserMailboxID}}).
-
 check_mail(Name, Password) ->
 	{_UsersDat, MailboxDat} = init(),
 	case login(Name, Password) of
 		{error, Reason} -> {error, Reason};
-		{_FriendsList, _Status, UserMailboxID} -> get_messages(MailboxDat, UserMailboxID)
+		{ok, UserMailboxID} -> get_messages(MailboxDat, UserMailboxID)
 	end.
 
 get_messages(MailboxDat, UserMailboxID) ->
@@ -80,7 +90,7 @@ get_messages(MailboxDat, UserMailboxID) ->
 incoming_message([H | T], Message, FailedDeliveries) ->
 	{UsersDat, MailboxDat} = init(),
 	case ets_contains(UsersDat, H) of
-		true -> [{_Name, {_Password, _FriendsList, _Status, UserMailboxID}}] = ets:lookup(UsersDat, H),
+		true -> [{_Name, {_Password, _Photo, UserMailboxID}}] = ets:lookup(UsersDat, H),
 					add_mailbox_message(MailboxDat, UserMailboxID, Message),
 					incoming_message(T, Message, FailedDeliveries);
 		false -> incoming_message(T, Message, [H | FailedDeliveries])
@@ -92,6 +102,24 @@ incoming_message([], _Message, FailedDeliveries) ->
 		false -> {error, FailedDeliveries}
 	end.
 
+getMailboxID(Username) ->
+	{UsersDat, _MailboxDat} = init(),
+	[{_Name, {_CorrectPass, _Photo, UserMailboxID}}] = ets:lookup(UsersDat, Username),
+	UserMailboxID.
+
+delete_individual_message(Username, UniqueMessageID) ->
+	{UsersDat, MailboxDat} = init(),
+	[{_Name, {_Password, _Photo, UserMailboxID}}] = ets:lookup(UsersDat, Username),
+	[{_ID, {Messages, NewCount, TotalCount}}] = ets:lookup(MailboxDat, UserMailboxID),
+	OriginalMessages = Messages,
+	NewMessages = delete_one_message(OriginalMessages, UniqueMessageID, []),
+	ets:update_element(MailboxDat, UserMailboxID, {2, {NewMessages, NewCount, TotalCount - 1}}),
+	ets_save(MailboxDat, "MailboxDat").
+
+
+delete_one_message([{Message, UniqueMessageIDMatch} | TailMessages], UniqueMessageIDMatch, Saved) -> lists:merge(Saved, TailMessages);
+delete_one_message([{Message, NotMatched} | TailMessages], UniqueMessageID, Saved) -> delete_one_message(TailMessages, UniqueMessageID, [{Message, NotMatched} | Saved]).
+
 ets_contains(Table, EntryKey) ->
 	case ets:lookup(Table, EntryKey) == [] of
 		true -> false;
@@ -101,20 +129,16 @@ ets_contains(Table, EntryKey) ->
 ets_save(TableID, FileName) ->
 	ets:tab2file(TableID, FileName).
 
-update_status(Name, NewStatus) ->
+update_photo(Name, NewPhoto) ->
 	{UsersDat, _MailboxDat} = init(),
-	[{Name, {CorrectPass, FriendsList, _Status, UserMailboxID}}] = ets:lookup(UsersDat, Name),
-	ets:insert(UsersDat, {Name, {CorrectPass, FriendsList, NewStatus, UserMailboxID}}).
+	[{Name, {CorrectPass, _Photo, UserMailboxID}}] = ets:lookup(UsersDat, Name),
+	ets:insert(UsersDat, {Name, {CorrectPass, NewPhoto, UserMailboxID}}),
+	ets_save(UsersDat, "UsersDat").
 
-get_status(Name) ->
+get_photo(Name) ->
 	{UsersDat, _MailboxDat} = init(),
-	[{_Name, {_CorrectPass, _FriendsList, Status, _UserMailboxID}}] = ets:lookup(UsersDat, Name),
-	Status.
-
-get_friends(Name) ->
-	{UsersDat, _MailboxDat} = init(),
-	[{_Name, {_CorrectPass, FriendsList, _Status, _UserMailboxID}}] = ets:lookup(UsersDat, Name),
-	FriendsList.
+	[{_Name, {_CorrectPass, Photo, _UserMailboxID}}] = ets:lookup(UsersDat, Name),
+	{ok, Photo}.
 
 
 
