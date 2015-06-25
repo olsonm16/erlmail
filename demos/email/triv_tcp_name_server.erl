@@ -49,6 +49,7 @@ name_server_loop(L) ->
 		{add, Key, Value} ->
 			name_server_loop([{Key,Value}|L]);
 		{From, {lookup, Key}} ->
+			io:format("Look up with list, ~p~n", [L]),
 			Value = lists:keysearch(Key, 1, L),
 			From ! {self(), Value},
 			name_server_loop(L);
