@@ -3,7 +3,7 @@
 
 %%-define(HOST, "localhost").
 %%-define(HOST, "137.113.118.30").
--define(HOST, "192.169.167.49").
+-define(HOST, "192.169.167.51").
 %-define(PORT, 50000).
 -define(PORT, 9100).
 
