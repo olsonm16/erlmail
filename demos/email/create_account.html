@@ -101,7 +101,7 @@ function logout() {
 
 
 function toInbox() {
-  window.location.replace("http://localhost:1456/email/inbox.html"); 
+  window.location.replace("http://192.169.167.49:1456/email/inbox.html"); 
 }
 
 function clientIsLoggedOn() {
@@ -138,6 +138,6 @@ function show_div(o){
     });
   });
 
-connect_to_erlang("localhost", 1456, "start");
+connect_to_erlang("192.169.167.49", 1456, "start");
 
 </script>

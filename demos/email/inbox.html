@@ -89,7 +89,7 @@ function run () {
  document.getElementById('filePicker').addEventListener('change', handleFileSelect, false);
 
   $("#header").click(function() {
-    window.location.replace("http://localhost:1456/email/create_account.html"); 
+    window.location.replace("http://192.169.167.49:1456/email/create_account.html"); 
   });
 
   $("#backgroundUpload").click(function() {
@@ -150,11 +150,11 @@ function clearInbox() {
   console.log("clicked clear inbox");
   send_json({'clearinbox':""});
   $("#settingsPane").slideUp(200);
-  window.location.replace("http://localhost:1456/email/inbox.html");
+  window.location.replace("http://192.169.167.49:1456/email/inbox.html");
 }
 
 function destroyUser() {
-  window.location.replace("http://localhost:1456/email/create_account.html"); 
+  window.location.replace("http://192.169.167.49:1456/email/create_account.html"); 
   send_json({'destroyuser':""});
 }
 
@@ -195,7 +195,7 @@ function inboxMode() {
 
 function logout() {
 	send_json({'logout':""});
-	window.location.replace("http://localhost:1456/email/create_account.html");	
+	window.location.replace("http://192.169.167.49:1456/email/create_account.html");	
 }
 
 
@@ -278,7 +278,7 @@ function clientIsLoggedOn() {
 }
 
 function noClientLoggedOn() {
-  window.location.replace("http://localhost:1456/email/create_account.html"); 
+  window.location.replace("http://192.169.167.49:1456/email/create_account.html"); 
 }
 
 set = false;
@@ -315,7 +315,7 @@ $("#mail").on("mouseenter", function() {
   }
 });
 
-connect_to_erlang("localhost", 1456, "start");
+connect_to_erlang("192.169.167.49", 1456, "start");
 send_json({'get':""});
 
 
