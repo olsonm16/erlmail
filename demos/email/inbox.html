@@ -197,6 +197,7 @@ function inboxMode() {
 
 function logout() {
 	send_json({'logout':""});
+  Cookies.remove('PID');
 	window.location.replace("http://192.169.167.49:1456/email/create_account.html");	
 }
 
