@@ -4,7 +4,7 @@
 -module(chat_client).
 -export([start/0, login/2, create_user/2, destroy_user/0, clear_inbox/0, send_message/4, check_mail/0, deleteOneMessage/1, loop/1, logout/0, isLoggedOn/0, myName/0, getOneMessage/1, get_photo/0, update_photo/1]).
 
-start() -> register(chat_client, spawn(chat_client, loop, [{null, null}])).
+start(Atom) -> register(Atom, spawn(chat_client, loop, [{null, null}])).
 
 %An interface which takes a name and password and makes a remote procedure call with the argument {login, {Name, Pwd}}.
 login(Name, Pwd) ->

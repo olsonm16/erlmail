@@ -2,7 +2,9 @@
 -export([start/1, listToString/2]).
 
 start(Browser) ->
-	ChatClient = chat_client:start(),
+	Text = io_lib:format("~p", [whereis(Browser)]),
+	PIDName = list_to_atom(lists:nath(1, Text)), 
+	ChatClient = chat_client:start(PIDName),
 	running(Browser, ChatClient).
 
 running(Browser, ChatClient) ->
