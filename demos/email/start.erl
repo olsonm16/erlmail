@@ -4,8 +4,8 @@
 start(Browser) ->
 	Text = io_lib:format("~p", [Browser]),
 	PIDName = list_to_atom(lists:nth(1, Text)), 
-	ChatClient = chat_client:start(PIDName),
-	running(Browser, ChatClient).
+	chat_client:start(PIDName),
+	running(Browser, PIDName).
 
 running(Browser, ChatClient) ->
 	io:format("~p~n", [Browser]),
