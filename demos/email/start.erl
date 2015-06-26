@@ -9,10 +9,10 @@ start(Browser) ->
 
 running(Browser, ChatClient) ->
 	io:format("~p~n", [Browser]),
-	case ChatClient of
-		true -> Browser ! [{cmd, clientIsLoggedOn}];
-		false -> Browser ! [{cmd, noClientLoggedOn}]
-	end,
+	%case ChatClient of
+	%	true -> Browser ! [{cmd, clientIsLoggedOn}];
+	%	false -> Browser ! [{cmd, noClientLoggedOn}]
+	%end,
     receive
 	{Browser, {struct, [{login, [Username, Password]}]}} ->
 		Name = erlang:bitstring_to_list(Username),
