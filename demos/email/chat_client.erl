@@ -2,54 +2,54 @@
 %% Thursday May 14 2015
 
 -module(chat_client).
--export([start/1, login/2, create_user/2, destroy_user/0, clear_inbox/0, send_message/4, check_mail/0, deleteOneMessage/1, loop/1, logout/0, isLoggedOn/0, myName/0, getOneMessage/1, get_photo/0, update_photo/1]).
+-export([start/0, login/3, create_user/3, destroy_user/1, clear_inbox/1, send_message/5, check_mail/1, deleteOneMessage/2, loop/1, logout/1, isLoggedOn/1, myName/1, getOneMessage/2, get_photo/1, update_photo/2]).
 
-start(Atom) -> register(Atom, spawn(chat_client, loop, [{null, null}])).
+start() -> spawn(chat_client, loop, [{null, null}]).
 
 %An interface which takes a name and password and makes a remote procedure call with the argument {login, {Name, Pwd}}.
-login(Name, Pwd) ->
-    rpc({login, {Name, Pwd}}).
+login(Pid, Name, Pwd) ->
+    rpc(Pid, {login, {Name, Pwd}}).
 
 %An interface which takes a name and password and makes a remote procedure call with the argument {create_user, {Name, Pwd}}.
-create_user(Name, Pwd) ->
-    rpc({create_user, {Name, Pwd}}).
+create_user(Pid, Name, Pwd) ->
+    rpc(Pid, {create_user, {Name, Pwd}}).
 
 %An interface which takes message information and likewise makes a remote procedure call.
-send_message(To, Subject, Body, Date) ->
-    rpc({send_message, {To, Subject, Body, Date}}).
+send_message(Pid, To, Subject, Body, Date) ->
+    rpc(Pid, {send_message, {To, Subject, Body, Date}}).
 
-check_mail() ->
-	rpc({check_mail}).
+check_mail(Pid) ->
+	rpc(Pid, {check_mail}).
 
-logout() ->
-	rpc({logout}).
+logout(Pid) ->
+	rpc(Pid, {logout}).
 
-isLoggedOn() ->
-	rpc({isLoggedOn}).
+isLoggedOn(Pid) ->
+	rpc(Pid, {isLoggedOn}).
 
-myName() ->
-	rpc({myname}).
+myName(Pid) ->
+	rpc(Pid, {myname}).
 
-getOneMessage(UniqueMessageID) ->
-	rpc({get_message, UniqueMessageID}).
+getOneMessage(Pid, UniqueMessageID) ->
+	rpc(Pid, {get_message, UniqueMessageID}).
 
-deleteOneMessage(UniqueMessageID) ->
-	rpc({delete_message, UniqueMessageID}).
+deleteOneMessage(Pid, UniqueMessageID) ->
+	rpc(Pid, {delete_message, UniqueMessageID}).
 
-update_photo(PhotoBin) ->
-	rpc({update_photo, PhotoBin}).
+update_photo(Pid, PhotoBin) ->
+	rpc(Pid, {update_photo, PhotoBin}).
 
-get_photo() ->
-	rpc({get_photo}).
+get_photo(Pid) ->
+	rpc(Pid, {get_photo}).
 
-destroy_user() ->
-	rpc({destroy_user}).
+destroy_user(Pid) ->
+	rpc(Pid, {destroy_user}).
 
-clear_inbox() ->
-	rpc({clear_inbox}).
+clear_inbox(Pid) ->
+	rpc(Pid, {clear_inbox}).
 
-rpc(Request) ->
-	chat_client ! {self(), Request},
+rpc(Pid, Request) ->
+	Pid ! {self(), Request},
 	receive
 			Reply -> Reply
 	end.
@@ -73,7 +73,7 @@ loop({Username, Password}) ->
 																loop({Name, Pwd});
 						{{error, Reason}} -> {From ! {error}}
 				end;
-			false -> {From ! {chat_client, {login_failure, {Username, "already logged on"}}}}
+			false -> {From ! {login_failure, {Username, "already logged on"}}}
 			end,
 			loop({Username, Password});
 	{From, {send_message, {To, Subject, Body, Date}}} ->

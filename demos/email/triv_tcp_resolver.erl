@@ -1,7 +1,7 @@
 -module(triv_tcp_resolver).
 -export([store/2, destroy/1, lookup/1]).
 
-%%-define(HOST, "localhost").
+%%-define(HOST, "192.169.167.49").
 %%-define(HOST, "137.113.118.30").
 -define(HOST, "192.169.167.49").
 %-define(PORT, 50000).
