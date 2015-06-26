@@ -44,7 +44,7 @@ running(Browser, ChatClientInstance) ->
 		Name = erlang:bitstring_to_list(Username),
 		Pass = erlang:bitstring_to_list(Password),
 		case chat_client:create_user(ChatClientInstance, Name, Pass) of
-			{account_created} ->  Browser ! [{cmd, clientIsLoggedOn}];
+			{account_created} ->  loginSuccess(Browser, ChatClientInstance);
 			{error} -> createFailure(Browser)
 		end,
 		running(Browser, ChatClientInstance);
