@@ -4,7 +4,7 @@
 my_ip() ->
     {ok, L} = inet:getifaddrs(),
     case lists:keysearch("enp2s0f0", 1, L) of
-    	false -> {value, {_,L1}} = lists:keysearch("en0", 1, L);
+    	false -> {value, {_,L1}} = lists:keysearch("lo:1", 1, L);
     	{_value, {_, _L1}} -> {value, {_,L1}} = lists:keysearch("enp2s0f0", 1, L)
     end,
     get_ip4(L1).
