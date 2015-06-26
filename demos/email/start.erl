@@ -2,14 +2,12 @@
 -export([start/1, listToString/2]).
 
 start(Browser) ->
-	case whereis(chat_client) of
-		undefined -> chat_client:start();
-		PID -> 	[]
-	end,
-	running(Browser, chat_client:isLoggedOn()).
+	ChatClient = chat_client:start(),
+	running(Browser, ChatClient).
 
-running(Browser, IsLoggedOn) ->
-	case chat_client:isLoggedOn() of
+running(Browser, ChatClient) ->
+	io:format("~p~n", [Browser]),
+	case ChatClient of
 		true -> Browser ! [{cmd, clientIsLoggedOn}];
 		false -> Browser ! [{cmd, noClientLoggedOn}]
 	end,
@@ -17,60 +15,60 @@ running(Browser, IsLoggedOn) ->
 	{Browser, {struct, [{login, [Username, Password]}]}} ->
 		Name = erlang:bitstring_to_list(Username),
 		Pass = erlang:bitstring_to_list(Password),
-		case chat_client:login(Name, Pass) of
+		case ChatClient:login(Name, Pass) of
 			{login_success} ->  loginSuccess(Browser);
 			{session_active, Username} -> sessionActive(Browser, Username);
 			{error} -> loginFailure(Browser);
 			Other -> io:format("Received ~p~n", [Other])
 		end,
-	    running(Browser, chat_client:isLoggedOn());
+	    running(Browser, ChatClient);
 
 	{Browser, {struct, [{create, [Username, Password]}]}} ->
 		Name = erlang:bitstring_to_list(Username),
 		Pass = erlang:bitstring_to_list(Password),
-		case chat_client:create_user(Name, Pass) of
+		case ChatClient:create_user(Name, Pass) of
 			{account_created} ->  Browser ! [{cmd, clientIsLoggedOn}];
 			{error} -> createFailure(Browser)
 		end,
-		running(Browser, chat_client:isLoggedOn());
+		running(Browser, ChatClient);
 
 	{Browser, {struct, [{get, Req}]}} ->
-		getEmails(Browser), 
-		getSavedBackground(Browser),
-		Browser ! [{cmd, fill_div}, {id, whoami}, {txt, list_to_binary(["Welcome, ", chat_client:myName()])}],
-		running(Browser, chat_client:isLoggedOn());
+		getEmails(Browser, ChatClient), 
+		getSavedBackground(Browser, ChatClient),
+		Browser ! [{cmd, fill_div}, {id, whoami}, {txt, list_to_binary(["Welcome, ", ChatClient:myName()])}],
+		running(Browser, ChatClient);
 
 	{Browser, {struct, [{getMessage, UniqueMessageID}]}} ->
 		Bin = erlang:bitstring_to_list(UniqueMessageID),
 		ListToBin = erlang:list_to_binary(Bin),
-		getOneMessage(Browser, ListToBin),
-		running(Browser, chat_client:isLoggedOn());
+		getOneMessage(Browser, ListToBin, ChatClient),
+		running(Browser, ChatClient);
 
 	{Browser, {struct, [{toNames, RawToList}, {subject, RawSubject}, {message, RawContent}]}} ->
 		TempToList = lists:map(fun(A) -> erlang:bitstring_to_list(A) end, RawToList),
 		ToList = lists:map(fun(A) -> re:replace(A, "(^\\s+)|(\\s+$)", "", [global,{return,list}]) end, TempToList),
 		Subject = erlang:bitstring_to_list(RawSubject),
 		Content = erlang:bitstring_to_list(RawContent),
-		case chat_client:send_message(ToList, Subject, Content, localTimeToString()) of
+		case ChatClient:send_message(ToList, Subject, Content, localTimeToString()) of
 			{message_delivered} -> sendSuccess(Browser);
 			{error, FailedDeliveries} -> sendFailure(Browser, FailedDeliveries)
 		end,
-		running(Browser, chat_client:isLoggedOn());
+		running(Browser, ChatClient);
 
 	{Browser, {struct, [{logout, _}]}} ->
-		chat_client:logout(),
-		running(Browser, chat_client:isLoggedOn());
+		ChatClient:logout(),
+		running(Browser, ChatClient);
 
 	{Browser,{struct, [{backgroundImage, Bin}]}} ->
-		updateSavedBackground(Browser, Bin),
-		running(Browser, chat_client:isLoggedOn());
+		updateSavedBackground(Browser, Bin, ChatClient),
+		running(Browser, ChatClient);
 
 	{Browser, {struct, [{clearinbox, _}]}} ->
-		chat_client:clear_inbox(),
-		running(Browser, chat_client:isLoggedOn());
+		ChatClient:clear_inbox(),
+		running(Browser, ChatClient);
 
 	{Browser, {struct, [{destroyuser, _}]}} ->
-		case chat_client:destroy_user() of
+		case ChatClient:destroy_user() of
 			{user_destroyed} -> running(Browser, false);	
 			{error, Reason} -> io:format("Deletion problem ~p~p~n", [error, Reason])
 		end;
@@ -78,12 +76,12 @@ running(Browser, IsLoggedOn) ->
 	{Browser, {struct, [{deleteID, CurrentUniqueMessageID}]}} ->
 		Bin = erlang:bitstring_to_list(CurrentUniqueMessageID),
 		ListToBin = erlang:list_to_binary(Bin),
-		deleteOneMessage(Browser, ListToBin),
-		running(Browser, chat_client:isLoggedOn());
+		deleteOneMessage(Browser, ListToBin, ChatClient),
+		running(Browser, ChatClient);
 
 	{Browser, Other} ->
 		io:format("Received other: ~p~n", [Other]),
-		running(Browser, chat_client:isLoggedOn())
+		running(Browser, ChatClient)
     end.
 
 localTimeToString() ->
@@ -99,24 +97,24 @@ localTimeToString() ->
 		false -> io_lib:format("~p/~p/~p | ~p:~p ~p", [M, D, Y, NEW_HH, MIN, DAYNITE])
 	end.
 
-getSavedBackground(Browser) ->
-	case chat_client:get_photo() of
+getSavedBackground(Browser, ChatClient) ->
+	case ChatClient:get_photo() of
 		{ok, GoodFormat} -> Browser ! [{cmd, updateBackground}, {txt, GoodFormat}];
 		{error, Reason} -> io:format("~p ~p ~n", [error, Reason])
 	end.
 
-updateSavedBackground(Browser, Bin) ->
+updateSavedBackground(Browser, Bin, ChatClient) ->
 	BinList = [Bin],
 	GoodFormat = list_to_binary(BinList),
-	case chat_client:update_photo(GoodFormat) of
+	case ChatClient:update_photo(GoodFormat) of
 		{{ok, GoodFormat}} -> Browser ! [{cmd, updateBackground}, {txt, GoodFormat}];
 		{ok, GoodFormat} -> Browser ! [{cmd, updateBackground}, {txt, GoodFormat}];
 		{ok} -> [];
 		{error, Reason} -> io:format("~p ~p ~n", [error, Reason])
 	end.
 
-getOneMessage(Browser, UniqueMessageID) ->
-	case chat_client:getOneMessage(UniqueMessageID) of
+getOneMessage(Browser, UniqueMessageID, ChatClient) ->
+	case ChatClient:getOneMessage(UniqueMessageID) of
 		{ok, Message} -> buildMessageView(Browser, Message, UniqueMessageID);
 		{ok, {error, Reason}} -> io:format("~p~n", [Reason]);
 		Other -> io:format("~p~n", [Other])
@@ -132,8 +130,8 @@ buildMessageView(Browser, {{From, ToList, Subject, Body, Date}}, UniqueMessageID
 	Browser ! [{cmd, hide_div}, {id, mail}],
 	Browser ! [{cmd, setID}, {txt, UniqueMessageID}].
 
-deleteOneMessage(Browser, ListToBin) ->
-	case chat_client:deleteOneMessage(ListToBin) of
+deleteOneMessage(Browser, ListToBin, ChatClient) ->
+	case ChatClient:deleteOneMessage(ListToBin) of
 		{message_deleted} -> Browser ! [{cmd, messageDeleted}];
 		{error, Reason} -> io:format("~p ~p ~n", [error, Reason])
 	end.
@@ -178,8 +176,8 @@ sessionActive(Browser, Username) ->
 	Browser ! [{cmd, show_div}, {id, sessionActive}],
 	Browser ! [{cmd, show_div}, {id, logoutOption}].
 
-getEmails(Browser) -> 
-	{Messages, NewCount, TotalCount} = chat_client:check_mail(),
+getEmails(Browser, ChatClient) -> 
+	{Messages, NewCount, TotalCount} = ChatClient:check_mail(),
 	Terms = [["<table align='center' width='800px' id = 'tableinbox'><thead>
           <th>From</th><th>To</th><th>Subject</th><th>Date</th></thead><tbody>"]],
     Bin = buildInbox(Messages, Terms),
