@@ -2,21 +2,38 @@
 -export([start/1, listToString/2]).
 
 start(Browser) ->
-	ChatClientInstance = chat_client:start(),
-	running(Browser, ChatClientInstance).
+	running(Browser, null).
+
+makeNewSession(Browser) ->
+	PID = chat_client:start(),
+	running(Browser, PID).	
 
 running(Browser, ChatClientInstance) ->
-	io:format("~p~n", [Browser]),
-	%case chat_client of
+	io:format("Running run function"),
+	io:format("Chat Client Instance is ~p~n", [ChatClientInstance]),
+	%case chat_client:isLoggedOn(ChatClientInstance) of
 	%	true -> Browser ! [{cmd, clientIsLoggedOn}];
 	%	false -> Browser ! [{cmd, noClientLoggedOn}]
 	%end,
     receive
+	{Browser, {struct, [{cookie, ProcessID}]}} ->
+		io:format("Receiving ProcessID from Browser ~p~n", [ProcessID]),
+		ListToBin = erlang:binary_to_list(ProcessID),
+		io:format("Converted ListToBin from Browser ~p~n", [ListToBin]),
+		BadClientPID = processtools:clientPID(ListToBin),
+		ClientPID =  re:replace(BadClientPID, "(^\\s+)|(\\s+$)", "", [global,{return,list}]),
+		io:format("Result from process tools, ~p~n", [ClientPID]),
+		case processtools:findProcessFromString(ClientPID) of
+			[] -> running(Browser, chat_client:start());
+			PID -> running(Browser, PID)
+		end;
+
 	{Browser, {struct, [{login, [Username, Password]}]}} ->
 		Name = erlang:bitstring_to_list(Username),
 		Pass = erlang:bitstring_to_list(Password),
+		io:format("Login request. ~p ~p ~p ~n", [Username, Password, ChatClientInstance]),
 		case chat_client:login(ChatClientInstance, Name, Pass) of
-			{login_success} ->  loginSuccess(Browser);
+			{login_success} ->  loginSuccess(Browser, ChatClientInstance);
 			{session_active, Username} -> sessionActive(Browser, Username);
 			{error} -> loginFailure(Browser);
 			Other -> io:format("Received ~p~n", [Other])
@@ -33,6 +50,7 @@ running(Browser, ChatClientInstance) ->
 		running(Browser, ChatClientInstance);
 
 	{Browser, {struct, [{get, Req}]}} ->
+		io:format("Get request"),
 		getEmails(Browser, ChatClientInstance), 
 		getSavedBackground(Browser, ChatClientInstance),
 		Browser ! [{cmd, fill_div}, {id, whoami}, {txt, list_to_binary(["Welcome, ", chat_client:myName(ChatClientInstance)])}],
@@ -147,8 +165,9 @@ sendFailure(Browser, FailedDeliveries) ->
 	Browser ! [{cmd, append_div}, {id, faileddeliveries}, {txt, list_to_binary(FailText)}],
 	Browser ! [{cmd, messageNotSent}].
 
-loginSuccess(Browser) -> 
-	Browser ! [{cmd, toInbox}].
+loginSuccess(Browser, ChatClientInstance) ->
+	CookieVal = io_lib:format("~p~n", [ChatClientInstance]), 
+	Browser ! [{cmd, toInbox}, {id, CookieVal}].
 	%Browser ! [{cmd, hide_div}, {id, failed}],
 	%Browser ! [{cmd, hide_div}, {id, newfailed}],
 	%Browser ! [{cmd, hide_div}, {id, createaccount}],

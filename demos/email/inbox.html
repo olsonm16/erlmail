@@ -1,6 +1,8 @@
 <script type="text/javascript" src="/common/jquery-1.7.1.min.js"></script>
 <script type="text/javascript" src="/ezwebframe/websock.js"></script>
 <script src="//cdn.jsdelivr.net/emojione/1.3.0/lib/js/emojione.min.js"></script>
+<script src="./js.cookie.js"></script>
+
 <title>erlmail inbox.</title>
 <link rel="stylesheet" href="./email.css" type="text/css">
 <body>
@@ -316,6 +318,17 @@ $("#mail").on("mouseenter", function() {
 });
 
 connect_to_erlang("192.169.167.49", 1456, "start");
+
+var Cookie = Cookies.get('PID');
+
+console.log(Cookie);
+
+if (typeof(Cookie) === "undefined") {
+  send_json({'cookie': 'null'});
+} else {
+  send_json({'cookie': Cookie});
+};
+
 send_json({'get':""});
 
 
