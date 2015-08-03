@@ -18,13 +18,13 @@ The project is complete, and is (sometimes) running at http://nick.network/email
 
 * We created two databases using the built in ETS storage:
   * UsersDat
-** MailboxDat
+  * MailboxDat
 * Objects in UsersDat
-** Key: Username
-** Value: {Password, Saved Photo, UniqueMailboxID}
+  * Key: Username
+  * Value: {Password, Saved Photo, UniqueMailboxID}
 * Objects in MailboxDat
-** Key: UniqueMailboxID
-** Value: {List of Messages, Count}
+  * Key: UniqueMailboxID
+  * Value: {List of Messages, Count}
 
 * Pretty much all Erlang tuples, except for Messages List.
 
@@ -43,7 +43,12 @@ The project is complete, and is (sometimes) running at http://nick.network/email
 * Clients can at any time clear their inbox or destroy their own account. Changes are made permanently to the ETS tables and saved at the time of the request.
 * Clients may refresh their Inbox manually if they wish, as the chat client running in the background does not change its login state unless a user logs out.
 
+##Frontend to Backend Hierarchy
+
+Best demonstrated thru an example:
+
 ![alt text](http://i.imgur.com/gIbTpJs.jpg "Example")
+
 
 
 
