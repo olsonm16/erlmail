@@ -17,7 +17,7 @@ The project is complete, and is (sometimes) running at http://nick.network/email
 ## User Model
 
 * We created two databases using the built in ETS storage:
-** UsersDat
+  * UsersDat
 ** MailboxDat
 * Objects in UsersDat
 ** Key: Username
