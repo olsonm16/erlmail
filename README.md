@@ -1,5 +1,6 @@
 # Erlmail : An Erlang email service
-========== This project was created for my Distributed Systems class in Spring 2015 at W&L. 
+
+This project was created for my Distributed Systems class in Spring 2015 at W&L. 
 
 The project is complete, and is (sometimes) running at http://nick.network/email/create_account.html. Usually it is not running, as I use that site for a variety of purposes. Ping me if you'd like a demo.
 
