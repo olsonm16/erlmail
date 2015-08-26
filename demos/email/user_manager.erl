@@ -21,7 +21,7 @@ create_user(Name, Password) ->
 		true -> {error, "Username already in use"};
 		false -> 	UserMailboxID = make_unique_mailbox(MailboxDat, ets:new(mailbox, [set, public])),
 					ets:insert(MailboxDat, {UserMailboxID, {[], 0, 0}}),
-					ets:insert(UsersDat, {Name, {Password, <<"">>, UserMailboxID}}),
+					ets:insert(UsersDat, {Name, {crypto:hash(md5, Password), <<"">>, UserMailboxID}}),
 					ets_save(UsersDat, "UsersDat"),
 					ets_save(MailboxDat, "MailboxDat"),
 					{success}
@@ -69,7 +69,7 @@ login(Name, Password) ->
 	{UsersDat, _MailboxDat} = init(),
 	case ets_contains(UsersDat, Name) of
 		true -> [{Name, {CorrectPass, _Photo, UserMailboxID}}] = ets:lookup(UsersDat, Name),
-				 case Password == CorrectPass of
+				 case crypto:hash(md5, Password) == CorrectPass of
 					true -> {ok, UserMailboxID};
 					false -> {error, "Login failed, incorrect password"}
 		end;
